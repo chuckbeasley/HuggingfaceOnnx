@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.8.34330.188
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HuggingfaceOnnx", "HuggingfaceOnnx\HuggingfaceOnnx.csproj", "{118D0C8C-3E53-43B8-BB72-CAA3B94B283D}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{118D0C8C-3E53-43B8-BB72-CAA3B94B283D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{118D0C8C-3E53-43B8-BB72-CAA3B94B283D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{118D0C8C-3E53-43B8-BB72-CAA3B94B283D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{118D0C8C-3E53-43B8-BB72-CAA3B94B283D}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {55B66FDC-595E-4F92-9431-A9F5168D21EE}
+	EndGlobalSection
+EndGlobal

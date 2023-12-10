@@ -1,0 +1,38 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+	<PackageReference Include="libtorch-cpu" Version="1.8.0.7" />
+	<PackageReference Include="Microsoft.ML" Version="1.5.5" />
+	<PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.8.0" />
+	<PackageReference Include="Microsoft.ML.OnnxTransformer" Version="1.5.5" />
+	<PackageReference Include="numsharp" Version="0.30.0" />
+    <PackageReference Include="torchsharp" Version="0.91.52604" />
+  </ItemGroup>
+	
+  <ItemGroup>
+    <Folder Include="Resources\" />
+  </ItemGroup>
+	
+  <ItemGroup>
+    <None Update="Resources\Model\all-MiniLM-L6-v2.onnx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\Model\all-MiniLM-L6-v2_quantized.onnx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\Model\model_quantized.onnx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\vocab.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>
