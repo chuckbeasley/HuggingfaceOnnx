@@ -20,5 +20,16 @@ namespace HuggingfaceOnnx.Models
             // values and indexes of the elements.
             return similar.topk(limit);
         }
+
+        public static float DotProduct(float[] array1, float[] array2) 
+        {
+            float result = 0f;
+            for (int x = 0; x < array1.Length; x++)
+            {
+                result += array1[x] * array2[x];
+            }
+
+            return result;
+        }
     }
 }

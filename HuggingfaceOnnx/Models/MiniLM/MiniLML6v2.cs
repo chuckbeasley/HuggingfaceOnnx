@@ -26,13 +26,14 @@ namespace HuggingfaceOnnx.Models.MiniLM
             tokenizer = new WordPieceTokenizer(File.ReadAllLines("Resources/vocab.txt").ToList());
         }
 
-        public TorchTensor GenerateVectors(IEnumerable<string> input)
+        public float[] GenerateEmbeddings(IEnumerable<string> input, bool meanPooling = true, bool normalize = true)
         {
-            var modelPath = "Resources/Model/all-MiniLM-L6-v2.onnx";
+            var modelPath = "Resources/Model/all-MiniLM-L6-v2_quantized.onnx";
             var mlContext = new MLContext();
 
             var inputTexts = input.ToList();
             var batchSize = inputTexts.Count;
+            var encodedCorpus = PrepareInput(inputTexts);
 
             // Onnx models do not support variable dimension vectors. We're using
             // schema definitions to predict a batch.
@@ -42,26 +43,26 @@ namespace HuggingfaceOnnx.Models.MiniLM
                 new VectorDataViewType(
                     NumberDataViewType.Int64,
                     batchSize,
-                    config.MaxSequenceLength);
+                    encodedCorpus.InputIds.Length);
             inputSchema["attention_mask"].ColumnType =
                 new VectorDataViewType(
                     NumberDataViewType.Int64,
                     batchSize,
-                    config.MaxSequenceLength);
+                    encodedCorpus.AttentionMask.Length);
             inputSchema["token_type_ids"].ColumnType =
                 new VectorDataViewType(
                     NumberDataViewType.Int64,
                     batchSize,
-                    config.MaxSequenceLength);
+                    encodedCorpus.TokenTypeIds.Length);
 
             // Onnx models may have hardcoded dimensions for inputs. Use a custom
             // schema for variable dimension since the number of text documents
             // are a user input for us (batchSize).
             var inputShape = new Dictionary<string, int[]>
             {
-                { "input_ids", new[] { batchSize, config.MaxSequenceLength } },
-                { "attention_mask", new[] { batchSize, config.MaxSequenceLength } },
-                { "token_type_ids", new[] { batchSize, config.MaxSequenceLength } }
+                { "input_ids", new[] { batchSize, encodedCorpus.InputIds.Length } },
+                { "attention_mask", new[] { batchSize, encodedCorpus.AttentionMask.Length } },
+                { "token_type_ids", new[] { batchSize, encodedCorpus.TokenTypeIds.Length } }
             };
             var pipeline = mlContext.Transforms
                 .ApplyOnnxModel(
@@ -82,10 +83,10 @@ namespace HuggingfaceOnnx.Models.MiniLM
                 new VectorDataViewType(
                     NumberDataViewType.Single,
                     batchSize,
-                    256,
+                    encodedCorpus.InputIds.Length, //config.MaxSequenceLength,
                     384);
 
-            var encodedCorpus = PrepareInput(inputTexts);
+            
             var engine = mlContext.Model
                 .CreatePredictionEngine<MiniLML6v2Input, MiniLML6v2Output>(
                     model,
@@ -93,11 +94,33 @@ namespace HuggingfaceOnnx.Models.MiniLM
                     outputSchemaDefinition: outputSchema);
             var predict = engine.Predict(encodedCorpus);
 
-            return Pooling.MeanPooling(
-                predict.Embedding,
-                encodedCorpus.AttentionMask,
-                batchSize,
-                config.MaxSequenceLength);
+            if (meanPooling == false && normalize == false)
+            {
+                return predict.Embedding;
+            }
+            else if (meanPooling == true && normalize == false)
+            {
+                return Pooling.MeanPooling(
+                  predict.Embedding,
+                  encodedCorpus.AttentionMask,
+                  batchSize,
+                  encodedCorpus.AttentionMask.Length).Data<float>().ToArray();
+            }
+            else if (meanPooling == true &&  normalize == true)
+            {
+                return Normalization.Normalize(Pooling.MeanPooling(
+                  predict.Embedding,
+                  encodedCorpus.AttentionMask,
+                  batchSize,
+                  encodedCorpus.AttentionMask.Length));
+            }
+            else // meanPooling == false && normalize == true
+            {
+                TorchTensor tokenEmbeddings = Float32Tensor.from(
+                    predict.Embedding,
+                    [batchSize, encodedCorpus.AttentionMask.Length, 384]);
+                return Normalization.Normalize(tokenEmbeddings);
+            }
         }
 
         public MiniLML6v2Input PrepareInput(string text)
@@ -111,28 +134,29 @@ namespace HuggingfaceOnnx.Models.MiniLM
             var batchSize = inputTexts.Count;
 
             // Encode the inputs with Bert Tokenizer
+            var tokens = tokenizer.Tokenize(inputTexts);
             var miniLML6v2Inputs = inputTexts.Select(text => Encode(
-                tokenizer.Tokenize(new[] { text }),
-                config.MaxSequenceLength)).ToList();
+                tokens,
+                tokens.Count)).ToList();
 
             // Convert encoded inputs to tensors
             var inputIdsTensor = new DenseTensor<long>(
                 miniLML6v2Inputs.SelectMany(b => b.InputIds).ToArray(),
                 new[]
                 {
-                    batchSize, config.MaxSequenceLength
+                    batchSize, tokens.Count
                 });
             var attentionMaskTensor = new DenseTensor<long>(
                 miniLML6v2Inputs.SelectMany(b => b.AttentionMask).ToArray(),
                 new[]
                 {
-                    batchSize, config.MaxSequenceLength
+                    batchSize, tokens.Count
                 });
             var tokenTypeIdsTensor = new DenseTensor<long>(
                 miniLML6v2Inputs.SelectMany(b => b.TokenTypeIds).ToArray(),
                 new[]
                 {
-                    batchSize, config.MaxSequenceLength
+                    batchSize, tokens.Count
                 });
             return new MiniLML6v2Input
             {
