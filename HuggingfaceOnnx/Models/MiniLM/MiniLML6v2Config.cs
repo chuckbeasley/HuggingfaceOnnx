@@ -4,7 +4,7 @@
     {
         public MiniLML6v2Config()
         {
-            this.MaxSequenceLength = 512;
+            this.MaxSequenceLength = 256;
         }
 
         public int MaxSequenceLength { get; set; }
